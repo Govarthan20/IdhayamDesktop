@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
-    "dev:web": "vite --config electron.vite.config.ts --mode renderer",
+    "dev:web": "vite",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
@@ -35,10 +35,13 @@
     "appId": "com.companyname.idhayam",
     "productName": "Idhayam Distributor",
     "copyright": "Copyright © 2026 Muthuraja Food Products",
+    "icon": "build/icon.png",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "win": {
+      "icon": "build/icon.png",
       "target": [
         {
           "target": "nsis",

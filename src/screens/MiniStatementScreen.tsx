@@ -28,9 +28,9 @@ const MiniStatementScreen: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100%', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #F1F5F9' }}>
-        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#F1F5F9', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
+    <div style={{ minHeight: '100%', backgroundColor: '#E2E8F0', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0' }}>
+        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#E2E8F0', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
           <MdArrowBack size={16} color="#64748B" />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>Back</span>
         </button>
@@ -44,8 +44,8 @@ const MiniStatementScreen: React.FC = () => {
         <div style={{ backgroundColor: '#fff', borderRadius: 25, padding: 20, marginBottom: 25, boxShadow: '0 4px 15px rgba(0,0,0,0.04)' }}>
           <p style={{ fontSize: 16, fontWeight: 900, color: '#1A1A1A', margin: '0 0 20px' }}>Filter Statement</p>
           <div style={{ display: 'flex', gap: 20, marginBottom: 25 }}>
-            <ReportDatePicker label="FROM DATE" value={fromDate} onSelect={setFromDate} />
-            <ReportDatePicker label="TO DATE" value={toDate} onSelect={setToDate} />
+            <ReportDatePicker label="FROM DATE" value={fromDate} onSelect={setFromDate} iconRight />
+            <ReportDatePicker label="TO DATE" value={toDate} onSelect={setToDate} iconRight />
           </div>
           <button onClick={handleGetReport} disabled={loading} style={{ width: '100%', background: 'linear-gradient(90deg, #3861FB, #2752E7)', border: 'none', borderRadius: 18, padding: '18px 0', color: '#fff', fontSize: 14, fontWeight: 900, cursor: 'pointer', letterSpacing: 0.5 }}>
             {loading ? 'Generating...' : 'GENERATE PDF REPORT'}
@@ -70,7 +70,7 @@ const MiniStatementScreen: React.FC = () => {
       {/* PDF Viewer Modal */}
       {viewerOpen && reportUrl && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: '#fff', zIndex: 2000, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 15px', borderBottom: '1px solid #F1F5F9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 15px', borderBottom: '1px solid #E2E8F0' }}>
             <button onClick={() => setViewerOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><MdClose size={26} color="#1A1A1A" /></button>
             <p style={{ fontSize: 17, fontWeight: 900, color: '#1A1A1A', margin: 0 }}>Statement Viewer</p>
             <button onClick={() => window.open(reportUrl, '_blank')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><MdFileDownload size={26} color="#3861FB" /></button>

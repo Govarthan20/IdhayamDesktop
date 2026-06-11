@@ -19,6 +19,15 @@ export const getCurrentDateDDMMYYYY = (): string => {
   return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
 };
 
+export const getMonthRangeDDMMYYYY = (month: number, year: number): { from: string; to: string } => {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const mm = String(month + 1).padStart(2, '0');
+  return {
+    from: `01-${mm}-${year}`,
+    to: `${String(lastDay).padStart(2, '0')}-${mm}-${year}`,
+  };
+};
+
 export const autoFormatDate = (text: string, prev: string): string => {
   if (text.length < prev.length) return text;
   const digits = text.replace(/\D/g, '');

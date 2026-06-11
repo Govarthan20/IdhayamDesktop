@@ -42,9 +42,9 @@ const BankDetailsScreen: React.FC = () => {
   useEffect(() => { fetchBankDetails(); }, []);
 
   return (
-    <div style={{ minHeight: '100%', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #F1F5F9' }}>
-        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#F1F5F9', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
+    <div style={{ minHeight: '100%', backgroundColor: '#E2E8F0', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0' }}>
+        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#E2E8F0', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
           <MdArrowBack size={16} color="#64748B" />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>Back</span>
         </button>
@@ -88,7 +88,7 @@ const BankDetailsScreen: React.FC = () => {
                   <span style={{ fontSize: 9, fontWeight: 900, color: '#10B981' }}>ACTIVE</span>
                 </div>
               </div>
-              <div style={{ height: 1, backgroundColor: '#F1F5F9' }} />
+              <div style={{ height: 1, backgroundColor: '#E2E8F0' }} />
               <CopyField label="Account Name" value={accName} />
               <CopyField label="Virtual Account No" value={virtualAccNo} />
               <CopyField label="IFSC Code" value={ifsc} />
@@ -98,7 +98,7 @@ const BankDetailsScreen: React.FC = () => {
 
         <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: 20, boxShadow: '0 4px 15px rgba(0,0,0,0.04)' }}>
           <p style={{ fontSize: 14, fontWeight: 900, color: '#1A1A1A', margin: '0 0 14px' }}>Usage Instructions</p>
-          {['Direct transfers to virtual accounts reflect instantly.', 'NEFT/RTGS payments may take up to 2 hours.', 'For any discrepancies, contact your account manager.'].map((t, i) => (
+          {['Direct transfers to virtual accounts reflect instantly.'].map((t, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 10 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#3861FB', marginTop: 6, marginRight: 10, flexShrink: 0 }} />
               <p style={{ fontSize: 13, color: '#718096', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>{t}</p>

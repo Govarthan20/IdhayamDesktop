@@ -1,6 +1,6 @@
 import {
-  BASE_URL, FALLBACK_CUSTOMER_ID, FALLBACK_BRANCH_ID,
-  FALLBACK_CUST_TYPE, API_TOKEN
+  BASE_URL, VEHICLE_TRACKING_URL, VEHICLE_TRACKING_FALLBACK_URL,
+  FALLBACK_CUSTOMER_ID, FALLBACK_BRANCH_ID, FALLBACK_CUST_TYPE, API_TOKEN,
 } from './config';
 
 export { AuthService } from './auth';
@@ -58,55 +58,146 @@ export async function getCustomerBalance(custId = FALLBACK_CUSTOMER_ID): Promise
   return { balance: '0.00', pendingOrder: '0.00', netBalance: '0.00' };
 }
 
-export async function getInvoicedVehicleList(custId = FALLBACK_CUSTOMER_ID, branchId = FALLBACK_BRANCH_ID): Promise<any> {
+const resolveTripId = (v: any): string => {
+  const fromCode = String(v.TRIP_CODE || v.tripCode || '').replace(/^R/i, '').trim();
+  if (fromCode && fromCode !== '0') return fromCode;
+  const fromId = String(v.TRIP_ID ?? v.Trip_Id ?? v.tripId ?? '').trim();
+  if (fromId && fromId !== '0') return fromId;
+  return String(v.API_TRIP_ID || v.TRIP_TRANS_ID || '').trim();
+};
+
+const extractVehicleRows = (inner: any): any[] => {
+  if (!inner) return [];
+  if (Array.isArray(inner)) return inner;
+  if (Array.isArray(inner.Table)) return inner.Table;
+  if (inner.Table) return [inner.Table];
+  if (Array.isArray(inner.Items)) return inner.Items;
+  if (inner.Items) return [inner.Items];
+  if (Array.isArray(inner.List)) return inner.List;
+  return [inner];
+};
+
+const mapVehicleRows = (rows: any[], branchId: string) =>
+  rows
+    .filter((v: any) => v && (v.VEHICLE_NO || v.BUS_NO || v.REF_NO || v.TRIP_CODE || resolveTripId(v)))
+    .map((v: any) => ({
+      vehicleNo: v.VEHICLE_NO || v.BUS_NO || v.Vehicle_No || v.vehicleNo || '—',
+      tripRefNo: v.REF_NO || v.Ref_No || v.TRIP_REF_NO || v.tripRefNo || '',
+      tripId: resolveTripId(v),
+      tripTransId: String(v.TRIP_TRANS_ID || v.ID || ''),
+      branchId: String(v.BRANCH_ID || v.branchId || branchId || '51'),
+    }))
+    .filter((v) => v.tripRefNo && v.tripId);
+
+const fetchInvoicedVehicleList = async (custId: string, branchId: string, mode: string) => {
   const payload = { A: custId, B: branchId, C: 'GetInvoicedVehicleList' };
+  const response = await fetch(`${BASE_URL}/APPEAL_UAT`, {
+    method: 'POST',
+    headers: { 'F': 'CheckVehicleDetails', 'MODE': mode, 'P': '', 'J': JSON.stringify(payload), 'M': 'POST', 'Authorization': API_TOKEN },
+  });
+  const outer = deepParse(await response.text());
+  const isSuccess = outer?.success === true || outer?.success === 'true';
+  if (!isSuccess || !outer?.result) return [];
+  const inner = deepParse(outer.result);
+  return mapVehicleRows(extractVehicleRows(inner), branchId);
+};
+
+export async function getInvoicedVehicleList(custId = FALLBACK_CUSTOMER_ID, branchId = FALLBACK_BRANCH_ID): Promise<any> {
   try {
-    const response = await fetch(`${BASE_URL}/APPEAL_UAT`, {
-      method: 'POST',
-      headers: { 'F': 'CheckVehicleDetails', 'MODE': 'MOBILE', 'P': '', 'J': JSON.stringify(payload), 'M': 'POST', 'Authorization': API_TOKEN },
-    });
-    const outer = deepParse(await response.text());
-    if (outer?.success && outer?.result) {
-      const inner = deepParse(outer.result);
-      const rows = Array.isArray(inner) ? inner : [inner];
-      const mapped = rows.map((v: any) => ({
-        vehicleNo: v.VEHICLE_NO || v.BUS_NO || '—',
-        tripRefNo: v.REF_NO || '',
-        tripId: v.TRIP_ID || '',
-        tripTransId: v.TRIP_TRANS_ID || v.ID || '',
-        branchId: v.BRANCH_ID || branchId,
-      }));
-      return mapped.length > 0 ? mapped[0] : null;
-    }
+    const mobile = await fetchInvoicedVehicleList(custId, branchId, 'MOBILE');
+    if (mobile.length > 0) return mobile;
+    return await fetchInvoicedVehicleList(custId, branchId, 'SCHOOL');
   } catch { }
-  return null;
+  return [];
 }
 
+const sanitizeCoord = (val: any): number => {
+  const n = parseFloat(String(val ?? '').replace(/[\s\t\r\n]/g, ''));
+  return Number.isFinite(n) ? n : NaN;
+};
+
+const parseVehicleTracking = (outer: any, tripRefNo = '') => {
+  if (!outer) return null;
+  const isSuccess = outer?.success === true || outer?.success === 'true' || outer?.success === 1;
+  if (!isSuccess && !outer?.result) return null;
+
+  const raw = outer?.result ?? outer?.data ?? outer;
+  const inner = deepParse(raw);
+  const rows = Array.isArray(inner) ? inner : inner ? [inner] : [];
+  if (rows.length === 0) return null;
+
+  const data = (tripRefNo
+    ? rows.find((r: any) => r?.REF_NO === tripRefNo || r?.refNo === tripRefNo)
+    : null) || rows[0];
+  if (!data || typeof data !== 'object') return null;
+
+  const lat = sanitizeCoord(data.LATITUDE ?? data.latitude);
+  const lng = sanitizeCoord(data.LONGITUDE ?? data.longitude);
+  const hasCoords = !isNaN(lat) && !isNaN(lng);
+
+  const trackings = data.BUS_STATUS_TRACKINGS ?? data.busStatusTrackings;
+  const routeStops = trackings
+    ? (Array.isArray(trackings) ? trackings : [trackings]).map((t: any) => ({
+        lat: sanitizeCoord(t.LATITUDE ?? t.latitude),
+        lng: sanitizeCoord(t.LONGITUDE ?? t.longitude),
+        address: (t.ADDRS || t.STOP_NAME || t.address || 'Stop').replace(/\\r\\n/g, ', '),
+        status: t.STATUS || t.status || 'NotStarted',
+        refNo: t.REF_NO || '',
+      })).filter((t: any) => !isNaN(t.lat) && !isNaN(t.lng))
+    : [];
+
+  const currentAddress = (data.ADDRS || 'Current Location').replace(/\\r\\n/g, ', ');
+  const stops = hasCoords
+    ? [{ lat, lng, address: currentAddress, status: data.STATUS || 'In Progress', isCurrent: true }, ...routeStops]
+    : routeStops;
+
+  return {
+    latitude: hasCoords ? lat : (routeStops[0]?.lat ?? 8.411395),
+    longitude: hasCoords ? lng : (routeStops[0]?.lng ?? 78.015017),
+    status: data.STATUS || data.status || 'In Progress',
+    vehicleNo: data.VEHICLE_NO || data.BUS_NO || data.vehicleNo || '',
+    tripRefNo: data.REF_NO || tripRefNo,
+    tripName: data.TRIP_NAME || data.TRIP_CODE || '',
+    stops,
+    lastUpdated: new Date().toISOString(),
+  };
+};
+
+const requestVehicleTracking = async (baseUrl: string, payload: Record<string, string>) => {
+  const response = await fetchWithTimeout(`${baseUrl}/APPEAL_UAT`, {
+    method: 'POST',
+    headers: {
+      'F': 'GetVehicleTrackingStatus',
+      'MODE': 'SCHOOL',
+      'P': '',
+      'J': JSON.stringify(payload),
+      'M': 'POST',
+      'Authorization': API_TOKEN,
+    },
+  }, 12000);
+  const text = await response.text();
+  if (!text) return null;
+  return parseVehicleTracking(deepParse(text), payload.F);
+};
+
 export async function getVehicleTracking(branchId: string, tripId: string, tripRefNo: string): Promise<any> {
-  const payload = { A: branchId || '51', B: tripId, C: 'GetVehicleTrackingStatus', D: '', E: 'No', F: tripRefNo, G: 'PARTY' };
-  try {
-    const response = await fetch(`${BASE_URL}/APPEAL_UAT`, {
-      method: 'POST',
-      headers: { 'F': 'GetVehicleTrackingStatus', 'MODE': 'MOBILE', 'P': '', 'J': JSON.stringify(payload), 'M': 'POST', 'Authorization': API_TOKEN },
-    });
-    const outer = deepParse(await response.text());
-    if (outer?.success && outer?.result) {
-      const inner = deepParse(outer.result);
-      const data = Array.isArray(inner) ? inner[0] : inner;
-      let stops: any[] = [];
-      if (data.BUS_STATUS_TRACKINGS) {
-        const trackings = Array.isArray(data.BUS_STATUS_TRACKINGS) ? data.BUS_STATUS_TRACKINGS : [data.BUS_STATUS_TRACKINGS];
-        stops = trackings.map((t: any) => ({
-          lat: parseFloat(t.LATITUDE), lng: parseFloat(t.LONGITUDE),
-          address: t.ADDRS || t.STOP_NAME || 'Stop', status: t.STATUS
-        })).filter((t: any) => !isNaN(t.lat) && !isNaN(t.lng));
-      }
-      if (data.LATITUDE && data.LONGITUDE) {
-        stops.unshift({ lat: parseFloat(data.LATITUDE), lng: parseFloat(data.LONGITUDE), address: 'Current Location', status: data.STATUS || 'In Progress' });
-      }
-      return { latitude: parseFloat(data.LATITUDE || '9.3622'), longitude: parseFloat(data.LONGITUDE || '77.9404'), status: data.STATUS || 'Moving', stops, lastUpdated: new Date().toISOString() };
-    }
-  } catch { }
+  if (!tripId || !tripRefNo) return null;
+  const payload = {
+    A: String(branchId || '51'),
+    B: String(tripId),
+    C: 'GetVehicleTrackingStatus',
+    D: '',
+    E: 'No',
+    F: tripRefNo,
+    G: 'PARTY',
+  };
+  const urls = [VEHICLE_TRACKING_URL, VEHICLE_TRACKING_FALLBACK_URL];
+  for (const baseUrl of urls) {
+    try {
+      const data = await requestVehicleTracking(baseUrl, payload);
+      if (data) return data;
+    } catch { }
+  }
   return null;
 }
 
@@ -153,7 +244,7 @@ export async function getOrderItems(custId = FALLBACK_CUSTOMER_ID): Promise<any>
       const inner = deepParse(outer.result);
       const rows = Array.isArray(inner) ? inner : [inner];
       return rows.map((item: any) => ({
-        id: String(item.ID || item.ITEM_ID || item.Id || ''),
+        id: String(item.ITEM_ID || item.ID || item.Id || ''),
         name: item.ITEM_DESC || item.Item_Desc || 'Unknown Item',
         price: parseFloat(item.PLUS_TAX || item.Plus_Tax || item.APP_PRICE || '0').toFixed(2),
         appPrice: parseFloat(item.APP_PRICE || item.App_Price || '0').toFixed(2),
@@ -174,44 +265,77 @@ export async function getPriceList(custId = FALLBACK_CUSTOMER_ID): Promise<any> 
   return getOrderItems(custId);
 }
 
-export async function submitOrder(custId: string, orderDetails: any[], branchId = FALLBACK_BRANCH_ID, userId = '2937'): Promise<any> {
+const orderErrorMessage = (outer: any): string => {
+  if (outer?.message) return String(outer.message);
+  if (typeof outer?.result === 'string' && outer.result.trim()) return outer.result;
+  if (outer?.result?.message) return String(outer.result.message);
+  return 'Server error';
+};
+
+export async function submitOrder(
+  custId: string,
+  orderDetails: any[],
+  branchId = FALLBACK_BRANCH_ID,
+  userId = '2937',
+): Promise<any> {
+  const effectiveCustId = custId || FALLBACK_CUSTOMER_ID;
+  const effectiveBranchId = branchId || FALLBACK_BRANCH_ID;
   const items = orderDetails.map((o: any) => {
     const raw = o.raw || {};
-    const price = parseFloat(o.price || '0');
-    const box = parseFloat(o.box || '0');
-    const pcs = parseFloat(o.pcs || '0');
-    const convFactor = parseFloat(raw.CONV_FACTOR || '1');
-    const totalPcs = (box * convFactor) + pcs;
-    const lineAmt = totalPcs * price;
-    const taxRate = parseFloat(raw.TAX_PER || '0');
-    const taxAmt = (lineAmt * taxRate) / 100;
+    const box = parseInt(String(o.box || '0'), 10) || 0;
+    const pcs = parseInt(String(o.pcs || '0'), 10) || 0;
+    const convFactor = parseFloat(raw.CONV_FACTOR || '1') || 1;
+    const totalPcs = o.totalPcs != null ? Number(o.totalPcs) : (box * convFactor) + pcs;
+    const unitPrice = parseFloat(raw.PLUS_TAX ?? raw.Plus_Tax ?? o.price ?? raw.APP_PRICE ?? o.appPrice ?? '0');
+    const lineAmt = +(totalPcs * unitPrice).toFixed(2);
+    const taxRate = parseFloat(raw.TAX_PER || '0') || 0;
+    const taxAmt = +((lineAmt * taxRate) / 100).toFixed(2);
+    const totalAmt = +(lineAmt + taxAmt).toFixed(2);
     return {
-      ITEM_ID: String(raw.ITEM_ID || raw.ID || '0'),
-      ITEM_DESC: String(raw.ITEM_DESC || ''),
-      SALES_UOM: String(raw.SALES_UOM || 'Pcs'),
-      CONV_FACTOR: Number(convFactor) || 1,
-      ORD_QTY: Number(totalPcs) || 0,
-      TOTAL_BOX: Number(box) || 0,
-      TOTAL_AMOUNT: Number(lineAmt + taxAmt) || 0,
-      APP_PRICE: Number(price) || 0,
-      TAX_PER: Number(taxAmt) || 0,
-      APP_LINE_AMT: Number(lineAmt) || 0,
-      USR_ID: Number(userId) || 2937,
-      BOX_QTY: Number(box) || 0,
-      PCS_QTY: Number(pcs) || 0,
+      ...raw,
+      ITEM_ID: raw.ITEM_ID || o.id,
+      ORD_QTY: totalPcs,
+      ORD_PCS: pcs,
+      TOTAL_BOX: box,
+      BOX_QTY: box,
+      PCS_QTY: pcs,
+      APP_PRICE: unitPrice,
+      APP_LINE_AMT: lineAmt,
+      APP_ORDER_AMT: totalAmt,
+      TOTAL_AMOUNT: totalAmt,
+      TAX_PER: taxAmt,
+      BRANCH_ID: parseInt(String(effectiveBranchId), 10) || 0,
+      USR_ID: parseInt(String(userId), 10) || 2937,
     };
   });
-  const payload = { A: custId, B: JSON.stringify(items), C: branchId, D: '', E: '', F: '', G: '', H: '', I: '', J: '' };
+  const payload = {
+    A: effectiveCustId,
+    B: JSON.stringify(items),
+    C: effectiveBranchId,
+    D: '', E: '', F: '', G: '', H: '', I: '', J: '',
+  };
   try {
     const response = await fetch(`${BASE_URL}/APPEAL_UAT`, {
       method: 'POST',
-      headers: { 'F': 'OrderCreation', 'MODE': 'MOBILE', 'P': '', 'J': '', 'M': 'POST', 'Authorization': API_TOKEN },
+      headers: {
+        'F': 'OrderCreation',
+        'MODE': 'MOBILE',
+        'P': '',
+        'J': '',
+        'M': 'POST',
+        'Authorization': API_TOKEN,
+      },
       body: JSON.stringify(payload),
     });
     const outer = deepParse(await response.text());
-    if (outer?.success) return { success: true, orderId: outer.result || 'SUCCESS', message: outer.message || 'Order placed successfully' };
-    return { success: false, message: outer.message || 'Server error' };
-  } catch {
+    if (import.meta.env.DEV) console.warn('[OrderCreation] response:', outer);
+    const isSuccess = outer?.success === true || outer?.success === 'true';
+    if (isSuccess) {
+      return { success: true, orderId: outer.result || 'SUCCESS', message: outer.message || 'Order placed successfully' };
+    }
+    return { success: false, message: orderErrorMessage(outer) };
+  } catch (e) {
+    if (import.meta.env.DEV) console.error('[OrderCreation] failed:', e);
     return { success: false, message: 'Network request failed' };
   }
 }

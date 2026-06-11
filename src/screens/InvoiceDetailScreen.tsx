@@ -51,9 +51,9 @@ const InvoiceDetailScreen: React.FC = () => {
   const toggleId = (id: string) => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
   return (
-    <div style={{ height: '100%', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #F1F5F9', flexShrink: 0 }}>
-        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#F1F5F9', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
+    <div style={{ height: '100%', backgroundColor: '#E2E8F0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0', flexShrink: 0 }}>
+        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#E2E8F0', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
           <MdArrowBack size={16} color="#64748B" />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>Back</span>
         </button>
@@ -66,8 +66,8 @@ const InvoiceDetailScreen: React.FC = () => {
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 36px' }}>
         <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-            <ReportDatePicker label="FROM" value={fromDate} onSelect={setFromDate} />
-            <ReportDatePicker label="TO" value={toDate} onSelect={setToDate} />
+            <ReportDatePicker label="FROM" value={fromDate} onSelect={setFromDate} iconRight />
+            <ReportDatePicker label="TO" value={toDate} onSelect={setToDate} iconRight />
             <button onClick={handleSearch} disabled={loading} style={{ height: 44, padding: '0 20px', borderRadius: 12, backgroundColor: '#3861FB', display: 'flex', alignItems: 'center', gap: 8, border: 'none', cursor: 'pointer', flexShrink: 0 }}>
               {loading ? <div style={{ width: 16, height: 16, border: '3px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <MdSearch size={16} color="#fff" />}
               <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Search</span>
@@ -79,13 +79,13 @@ const InvoiceDetailScreen: React.FC = () => {
           <div style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(56,97,251,0.06)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '44px 2fr 2fr 1fr 2fr', backgroundColor: '#EEF2FF', padding: '12px 20px', gap: 8 }}>
               {['', 'INV NO', 'DATE', 'BRANCH', 'AMOUNT'].map((h, i) => (
-                <span key={i} style={{ fontSize: 11, fontWeight: 800, color: '#3861FB', letterSpacing: 0.5, textAlign: i === 4 ? 'right' : 'left' }}>{h}</span>
+                <span key={i} style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: 0.5, textAlign: i === 4 ? 'right' : 'left' }}>{h}</span>
               ))}
             </div>
             {invoices.map((inv, idx) => {
               const sel = selectedIds.includes(inv.id);
               return (
-                <div key={idx} onClick={() => toggleId(inv.id)} style={{ display: 'grid', gridTemplateColumns: '44px 2fr 2fr 1fr 2fr', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #F8FAFC', backgroundColor: sel ? '#EEF2FF' : 'transparent', cursor: 'pointer', gap: 8 }}>
+                <div key={idx} onClick={() => toggleId(inv.id)} style={{ display: 'grid', gridTemplateColumns: '44px 2fr 2fr 1fr 2fr', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #EEF2F6', backgroundColor: sel ? '#EEF2FF' : 'transparent', cursor: 'pointer', gap: 8 }}>
                   <div style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${sel ? '#3861FB' : '#E2E8F0'}`, backgroundColor: sel ? '#3861FB' : 'transparent', flexShrink: 0 }} />
                   <span style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.billNo}</span>
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>{inv.date}</span>
@@ -108,8 +108,8 @@ const InvoiceDetailScreen: React.FC = () => {
 
       {viewerOpen && pdfUrl && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: '#fff', zIndex: 2000, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #F1F5F9' }}>
-            <button onClick={() => setViewerOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#F1F5F9', border: 'none', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #E2E8F0' }}>
+            <button onClick={() => setViewerOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#E2E8F0', border: 'none', cursor: 'pointer' }}>
               <MdClose size={16} color="#64748B" />
               <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>Close</span>
             </button>

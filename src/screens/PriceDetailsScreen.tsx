@@ -42,9 +42,9 @@ const PriceDetailsScreen: React.FC = () => {
   const thStyle: React.CSSProperties = { fontSize: 14, fontWeight: 900, color: '#1d1e1f', textAlign: 'center', padding: '0 0 12px' };
 
   return (
-    <div style={{ height: '100%', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #F1F5F9', flexShrink: 0 }}>
-        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#F1F5F9', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
+    <div style={{ height: '100%', backgroundColor: '#E2E8F0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0', flexShrink: 0 }}>
+        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#E2E8F0', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
           <MdArrowBack size={16} color="#64748B" />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>Back</span>
         </button>
@@ -73,10 +73,10 @@ const PriceDetailsScreen: React.FC = () => {
 
       {/* Table header */}
       <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.5fr 1fr 1.4fr', padding: '0 25px 12px', borderBottom: '2px solid #EDF2F7', flexShrink: 0 }}>
-        <span style={{ ...thStyle, textAlign: 'right' }}>MRP (₹)</span>
+        <span style={{ ...thStyle, textAlign: 'left', color: '#1A1A1A' }}>MRP (₹)</span>
         <span style={{ ...thStyle, textAlign: 'center' }}>ITEM</span>
         <span style={{ ...thStyle, textAlign: 'center' }}>TAX %</span>
-        <span style={{ ...thStyle, textAlign: 'right' }}>PRICE (₹)</span>
+        <span style={{ ...thStyle, textAlign: 'right', color: '#1A1A1A' }}>PRICE (₹)</span>
       </div>
 
       {loading ? (
@@ -86,11 +86,11 @@ const PriceDetailsScreen: React.FC = () => {
       ) : (
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {filtered.map((item, idx) => (
-            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.5fr 1fr 1.4fr', alignItems: 'center', padding: '12px 25px', borderBottom: '1px solid #F1F5F9' }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#1A1A1A', textAlign: 'right' }}>₹{item.mrp}</span>
+            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.5fr 1fr 1.4fr', alignItems: 'center', padding: '12px 25px', borderBottom: '1px solid #E2E8F0' }}>
+              <span style={{ fontSize: 13, fontWeight: 900, color: '#3861FB', textAlign: 'left' }}>₹{item.mrp}</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#1A1A1A', textAlign: 'center', paddingLeft: 8, paddingRight: 8 }}>{item.name}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#718096', textAlign: 'center' }}>{item.tax}</span>
-              <span style={{ fontSize: 13, fontWeight: 900, color: '#3861FB', textAlign: 'right' }}>₹{item.price}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', textAlign: 'center' }}>{item.tax}</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: '#16A34A', textAlign: 'right' }}>₹{item.appPrice}</span>
             </div>
           ))}
         </div>

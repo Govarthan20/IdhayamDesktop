@@ -36,7 +36,7 @@ const AppLayout: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#F1F5F9' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#E2E8F0' }}>
       {/* Sidebar */}
       <div style={{
         width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column',
@@ -48,7 +48,7 @@ const AppLayout: React.FC = () => {
         <div style={{ padding: '22px 18px 18px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
             <div style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <img src={logoImg} alt="Idhayam" style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              <img src={logoImg} alt="Idhayam" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
             <div>

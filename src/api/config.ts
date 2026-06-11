@@ -1,4 +1,10 @@
-export const BASE_URL = 'http://117.232.71.91:2101/MOB';
+export const API_HOST = 'http://117.232.71.91:2101';
+export const VEHICLE_TRACKING_HOST = 'http://117.234.71.91:2101';
+
+// In dev, requests go through the Vite proxy to avoid browser CORS blocks.
+export const BASE_URL = import.meta.env.DEV ? '/MOB' : `${API_HOST}/MOB`;
+export const VEHICLE_TRACKING_URL = import.meta.env.DEV ? '/MOB-TRACK' : `${VEHICLE_TRACKING_HOST}/MOB`;
+export const VEHICLE_TRACKING_FALLBACK_URL = import.meta.env.DEV ? '/MOB' : `${API_HOST}/MOB`;
 export const API_TOKEN = 'Bearer 5HNdr62cpgiZ/Op3AU/uuUXRpkUVurMbVZPrUE+nOF1iHgazGrL8iWUU2jRuPPbU';
 export const DEVICE_INFO = 'Idhayam Desktop App ## Windows';
 

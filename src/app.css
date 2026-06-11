@@ -4,11 +4,17 @@
   padding: 0;
 }
 
+:root {
+  --app-bg: #E2E8F0;
+  --app-bg-soft: #E8EDF3;
+  --app-surface: #F8FAFC;
+}
+
 html, body, #root {
   height: 100%;
   width: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: #F8F9FD;
+  background: var(--app-bg-soft);
   overflow: hidden;
 }
 
@@ -33,7 +39,7 @@ a {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #dce3ec;
 }
 
 ::-webkit-scrollbar-thumb {

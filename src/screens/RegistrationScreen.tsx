@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MdArrowBack, MdBadge, MdPhone, MdVerifiedUser, MdPerson } from 'react-icons/md';
 import logoImg from '../assets/logo.png';
-import papa1Img from '../assets/papa1.png';
 
 const MOCK_PHONES = ['+91 98765 43210', '+91 94435 34646', '+91 76543 21098'];
 
@@ -43,7 +42,7 @@ const RegistrationScreen: React.FC = () => {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 48 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              <img src={logoImg} alt="Idhayam" style={{ width: '90%', height: '90%', objectFit: 'contain' }}
+              <img src={logoImg} alt="Idhayam" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
             <div>
@@ -74,13 +73,13 @@ const RegistrationScreen: React.FC = () => {
         </div>
 
         <div style={{ flex: 1, position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', minHeight: 180 }}>
-          <img src={papa1Img} alt="" style={{ width: '80%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.35))' }}
+          <img src={logoImg} alt="Idhayam" style={{ width: '80%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 16px 40px rgba(0,0,0,0.35))' }}
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
       </div>
 
       {/* Right form panel */}
-      <div style={{ flex: 1, backgroundColor: '#F8FAFC', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 60px', overflowY: 'auto' }}>
+      <div style={{ flex: 1, backgroundColor: '#EEF2F6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 60px', overflowY: 'auto' }}>
         <div style={{ width: '100%', maxWidth: 420 }}>
           <button onClick={() => step === 2 ? setStep(1) : navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 28, color: '#64748B', fontSize: 13, fontWeight: 700, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}>
             <MdArrowBack size={18} />
@@ -99,7 +98,7 @@ const RegistrationScreen: React.FC = () => {
           {step === 1 && (
             <div>
               <label style={{ fontSize: 11, fontWeight: 800, color: '#475569', marginBottom: 8, display: 'block', letterSpacing: 0.5 }}>PAN NUMBER</label>
-              <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 14, padding: '0 16px', height: 52, marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#E2E8F0', borderRadius: 14, padding: '0 16px', height: 52, marginBottom: 24 }}>
                 <MdBadge size={18} color="#94A3B8" style={{ marginRight: 10 }} />
                 <input style={{ flex: 1, fontSize: 16, fontWeight: 700, color: '#0F172A', border: 'none', outline: 'none', backgroundColor: 'transparent' }}
                   value={pan} onChange={e => setPan(e.target.value.toUpperCase())}
@@ -134,7 +133,7 @@ const RegistrationScreen: React.FC = () => {
               ) : (
                 <div style={{ marginTop: 24 }}>
                   <label style={{ fontSize: 11, fontWeight: 800, color: '#475569', marginBottom: 8, display: 'block', letterSpacing: 0.5 }}>6-DIGIT OTP</label>
-                  <input style={{ width: '100%', fontSize: 24, fontWeight: 900, color: '#0F172A', padding: '12px 16px', borderRadius: 14, border: '2px solid #E2E8F0', backgroundColor: '#F8FAFC', boxSizing: 'border-box', outline: 'none', marginBottom: 16, letterSpacing: 8, textAlign: 'center' }}
+                  <input style={{ width: '100%', fontSize: 24, fontWeight: 900, color: '#0F172A', padding: '12px 16px', borderRadius: 14, border: '2px solid #E2E8F0', backgroundColor: '#EEF2F6', boxSizing: 'border-box', outline: 'none', marginBottom: 16, letterSpacing: 8, textAlign: 'center' }}
                     value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="••••••" maxLength={6} />
                   <button style={{ width: '100%', padding: '16px 0', borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(90deg, #10B981, #059669)', color: '#fff', fontSize: 15, fontWeight: 800 }} onClick={handleRegister} disabled={loading}>
                     {loading ? 'Verifying...' : 'Verify & Register →'}

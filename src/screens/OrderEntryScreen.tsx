@@ -3,12 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { getOrderItems, submitOrder } from '../api';
 import { useSession } from '../context/SessionContext';
 import { MdArrowBack, MdInventory, MdChevronRight } from 'react-icons/md';
+import { formatIndianNumber } from '../utils/formatIndianNumber';
 
-const formatAmount = (value: number): string => {
-  const [int, dec] = value.toFixed(2).split('.');
-  const last3 = int.slice(-3);
-  const rest = int.slice(0, -3);
-  return (rest ? rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + last3 : last3) + '.' + dec;
+const GRID_STYLE: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '2fr 1fr 1fr 1fr',
+  columnGap: 16,
+  alignItems: 'center',
+  padding: '0 25px',
+};
+
+const PRICE_CELL: React.CSSProperties = {
+  width: 88,
+  textAlign: 'right',
+  justifySelf: 'start',
 };
 
 const ItemRow = React.memo(({ item, qty, onUpdate }: any) => {
@@ -17,16 +25,16 @@ const ItemRow = React.memo(({ item, qty, onUpdate }: any) => {
   const hasQty = (qty?.box && qty.box !== '0' && qty.box !== '') || (qty?.pcs && qty.pcs !== '0' && qty.pcs !== '');
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '2.7fr 1.2fr 1.3fr 1.3fr', alignItems: 'center', padding: '10px 25px', backgroundColor: hasQty ? '#F0F4FF' : 'transparent', borderBottom: '1px solid #F1F5F9' }}>
-      <div>
+    <div style={{ ...GRID_STYLE, padding: '10px 25px', backgroundColor: hasQty ? '#F0F4FF' : 'transparent', borderBottom: '1px solid #E2E8F0' }}>
+      <div style={{ minWidth: 0 }}>
         <p style={{ fontSize: 13, fontWeight: 700, color: '#1A1A1A', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</p>
-        <p style={{ fontSize: 11, fontWeight: 600, color: '#A0AEC0', margin: '2px 0 0' }}>₹{item.mrp}</p>
+        <p style={{ fontSize: 13, fontWeight: 900, color: '#3861FB', margin: '2px 0 0' }}>₹{item.mrp}</p>
       </div>
-      <p style={{ fontSize: 13, fontWeight: 700, color: '#3861FB', margin: 0, textAlign: 'right', paddingRight: 10 }}>₹{appPrice.toFixed(2)}</p>
+      <p style={{ ...PRICE_CELL, fontSize: 13, fontWeight: 900, color: '#16A34A', margin: 0 }}>₹{appPrice.toFixed(2)}</p>
       <input type="text" inputMode="numeric" value={qty?.box || ''} onChange={e => onUpdate(item?.id, 'box', e.target.value.replace(/[^0-9]/g, ''))} disabled={isZero}
-        style={{ width: '100%', height: 36, borderRadius: 8, border: '1.5px solid #EDF2F7', textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#1A1A1A', outline: 'none', backgroundColor: isZero ? '#F1F5F9' : '#fff', boxSizing: 'border-box' }} />
+        style={{ width: '100%', height: 36, borderRadius: 8, border: '1.5px solid #EDF2F7', textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#1A1A1A', outline: 'none', backgroundColor: isZero ? '#E2E8F0' : '#fff', boxSizing: 'border-box' }} />
       <input type="text" inputMode="numeric" value={qty?.pcs || ''} onChange={e => onUpdate(item?.id, 'pcs', e.target.value.replace(/[^0-9]/g, ''))} disabled={isZero}
-        style={{ width: '100%', height: 36, borderRadius: 8, border: '1.5px solid #EDF2F7', textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#1A1A1A', outline: 'none', backgroundColor: isZero ? '#F1F5F9' : '#fff', boxSizing: 'border-box', marginLeft: 4 }} />
+        style={{ width: '100%', height: 36, borderRadius: 8, border: '1.5px solid #EDF2F7', textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#1A1A1A', outline: 'none', backgroundColor: isZero ? '#E2E8F0' : '#fff', boxSizing: 'border-box' }} />
     </div>
   );
 });
@@ -84,19 +92,20 @@ const OrderEntryScreen: React.FC = () => {
   const filteredData = useMemo(() => products.filter(p => p.category === selectedCat).sort((a, b) => (a.imSort || 9999) - (b.imSort || 9999)), [products, selectedCat]);
 
   const executeSubmit = async () => {
+    if (!activeOrders.length) { alert('No items in order.'); return; }
     setLoading(true);
     try {
       const res = await submitOrder(session?.custId || '', activeOrders, session?.branchId, session?.userId);
       if (res.success) { alert(`Order #${res.orderId} recorded.`); navigate(-1); }
       else alert(res.message || 'Failed to place order.');
-    } catch { alert('An error occurred.'); }
+    } catch (e: any) { alert(e?.message || 'An error occurred.'); }
     finally { setLoading(false); }
   };
 
   return (
-    <div style={{ height: '100%', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #F1F5F9', flexShrink: 0 }}>
-        <button onClick={() => page === 2 ? setPage(1) : navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#F1F5F9', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
+    <div style={{ height: '100%', backgroundColor: '#E2E8F0', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0', flexShrink: 0 }}>
+        <button onClick={() => page === 2 ? setPage(1) : navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#E2E8F0', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
           <MdArrowBack size={16} color="#64748B" />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>{page === 2 ? 'Edit Order' : 'Back'}</span>
         </button>
@@ -122,9 +131,9 @@ const OrderEntryScreen: React.FC = () => {
           </div>
 
           {/* Table header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2.7fr 1.2fr 1.3fr 1.3fr', padding: '0 25px 12px', borderBottom: '2px solid #EDF2F7' }}>
+          <div style={{ ...GRID_STYLE, paddingBottom: 12, borderBottom: '2px solid #EDF2F7' }}>
             {['ITEM / MRP', 'PRICE (₹)', 'BOX', 'PCS'].map((h, i) => (
-              <span key={h} style={{ fontSize: 14, fontWeight: 900, color: '#1d1e1f', textAlign: i === 0 ? 'left' : 'center' }}>{h}</span>
+              <span key={h} style={{ fontSize: 14, fontWeight: 900, color: '#1d1e1f', ...(i === 1 ? PRICE_CELL : {}), textAlign: i === 0 ? 'left' : i === 1 ? 'right' : 'center' }}>{h}</span>
             ))}
           </div>
 
@@ -149,7 +158,7 @@ const OrderEntryScreen: React.FC = () => {
             <button onClick={() => setPage(2)} style={{ margin: 15, border: 'none', cursor: 'pointer', borderRadius: 20, background: 'linear-gradient(90deg, #3861FB, #2752E7)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 25px' } as any}>
               <div style={{ textAlign: 'left' }}>
                 <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 700, margin: 0 }}>Total Amount</p>
-                <p style={{ color: '#fff', fontSize: 18, fontWeight: 900, margin: '2px 0 0' }}>₹ {formatAmount(totalAmount)}</p>
+                <p style={{ color: '#fff', fontSize: 18, fontWeight: 900, margin: '2px 0 0' }}>₹ {formatIndianNumber(totalAmount)}</p>
               </div>
               <span style={{ color: '#fff', fontSize: 14, fontWeight: 900 }}>Review & Confirm →</span>
             </button>
@@ -165,12 +174,12 @@ const OrderEntryScreen: React.FC = () => {
                   <p style={{ fontSize: 15, fontWeight: 900, color: '#1A1A1A', margin: '4px 0' }}>{item.name}</p>
                   <p style={{ fontSize: 12, fontWeight: 600, color: '#718096', margin: 0 }}>{item.box || 0} Box + {item.pcs || 0} Pcs</p>
                 </div>
-                <p style={{ fontSize: 16, fontWeight: 900, color: '#3861FB', margin: 0 }}>₹{formatAmount(item.amount)}</p>
+                <p style={{ fontSize: 16, fontWeight: 900, color: '#3861FB', margin: 0 }}>₹{formatIndianNumber(item.amount)}</p>
               </div>
             ))}
-            <div style={{ backgroundColor: '#F0F4FF', borderRadius: 16, padding: 20, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ backgroundColor: '#ECFDF5', borderRadius: 16, padding: 20, display: 'flex', justifyContent: 'space-between', border: '1px solid #A7F3D0' }}>
               <span style={{ fontSize: 16, fontWeight: 900, color: '#1A1A1A' }}>Grand Total</span>
-              <span style={{ fontSize: 18, fontWeight: 900, color: '#3861FB' }}>₹ {formatAmount(totalAmount)}</span>
+              <span style={{ fontSize: 18, fontWeight: 900, color: '#16A34A' }}>₹ {formatIndianNumber(totalAmount)}</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, padding: 15 }}>

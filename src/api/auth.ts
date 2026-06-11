@@ -1,6 +1,6 @@
-import { API_TOKEN } from './config';
+import { BASE_URL, API_TOKEN } from './config';
 
-const API_URL = 'http://117.232.71.91:2101/MOB/APPEAL_UAT';
+const API_URL = `${BASE_URL}/APPEAL_UAT`;
 
 const btoa64 = (str: string): string => {
   try { return btoa(unescape(encodeURIComponent(str))); } catch { return btoa(str); }

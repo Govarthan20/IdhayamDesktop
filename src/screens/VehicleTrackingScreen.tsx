@@ -1,8 +1,16 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getVehicleTracking } from '../api';
+import { getInvoicedVehicleList, getVehicleTracking } from '../api';
 import { useSession } from '../context/SessionContext';
-import { MdArrowBack, MdRefresh } from 'react-icons/md';
+import { MdArrowBack, MdRefresh, MdLocalShipping } from 'react-icons/md';
+
+export interface VehicleTrip {
+  vehicleNo: string;
+  tripRefNo: string;
+  tripId: string;
+  tripTransId?: string;
+  branchId?: string;
+}
 
 const generateMapHTML = (lat: number, lng: number, vehicleNo: string, stops: any[] = []) => {
   const stopsJson = JSON.stringify(stops);
@@ -10,7 +18,7 @@ const generateMapHTML = (lat: number, lng: number, vehicleNo: string, stops: any
 <html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBHB7JTRK2tDsEK-AaJyFVJuMj2d7H2cLk"></script>
-<style>*{margin:0;padding:0;box-sizing:border-box}html,body,#map{height:100%;width:100%;overflow:hidden;background:#e5e9f0}</style>
+<style>*{margin:0;padding:0;box-sizing:border-box}html,body,#map{height:100%;width:100%;overflow:hidden;background:#d5dce6}</style>
 </head><body><div id="map"></div>
 <script>
 var lat=${lat},lng=${lng},stops=${stopsJson},vehicleNo='${vehicleNo||'Vehicle'}';
@@ -25,16 +33,21 @@ function initMap(){
     var pathCoords=[],bounds=new google.maps.LatLngBounds();
     stops.forEach(function(s){
       var pos={lat:parseFloat(s.lat),lng:parseFloat(s.lng)};
+      if(isNaN(pos.lat)||isNaN(pos.lng))return;
       pathCoords.push(pos);bounds.extend(pos);
-      var isCurr=Math.abs(pos.lat-lat)<0.0001&&Math.abs(pos.lng-lng)<0.0001;
-      if(!isCurr){
-        var c=s.status==='Completed'?'#27AE60':'#8E8E93';
+      if(!s.isCurrent){
+        var st=(s.status||'').toLowerCase();
+        var c=st.indexOf('complete')>=0?'#27AE60':st.indexOf('progress')>=0?'#3861FB':'#F59E0B';
         var sm=new google.maps.Marker({position:pos,map:map,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:c,fillOpacity:1,strokeColor:'#FFFFFF',strokeWeight:2}});
-        var si=new google.maps.InfoWindow({content:'<div style="font-family:sans-serif;max-width:200px;"><b style="font-size:12px;">'+s.address+'</b><br><span style="font-size:10px;color:'+c+'">'+s.status+'</span></div>'});
+        var addr=(s.address||'Stop').replace(/'/g,'');
+        var si=new google.maps.InfoWindow({content:'<div style="font-family:sans-serif;max-width:220px;"><b style="font-size:12px;">'+addr+'</b><br><span style="font-size:10px;color:'+c+'">'+(s.status||'')+'</span></div>'});
         sm.addListener('click',function(){si.open(map,sm);});
       }
     });
-    if(pathCoords.length>1)map.fitBounds(bounds);
+    if(pathCoords.length>1){
+      new google.maps.Polyline({path:pathCoords,geodesic:true,strokeColor:'#3861FB',strokeOpacity:0.7,strokeWeight:3,map:map});
+      map.fitBounds(bounds);
+    }
   }
 }
 window.onload=initMap;
@@ -45,79 +58,236 @@ const VehicleTrackingScreen: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { session } = useSession();
-  const { vehicleNo, tripRefNo, tripId } = (location.state as any) || {};
-  const [loading, setLoading] = useState(true);
+  const routeState = (location.state as any) || {};
+
+  const [vehicles, setVehicles] = useState<VehicleTrip[]>([]);
+  const [selectedTrip, setSelectedTrip] = useState<VehicleTrip | null>(null);
+  const [listLoading, setListLoading] = useState(true);
+  const [trackingLoading, setTrackingLoading] = useState(false);
   const [mapHtml, setMapHtml] = useState('');
   const [locData, setLocData] = useState<any>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const fetchLocation = async () => {
-    if (!tripId || !tripRefNo) return;
+  const pickInitialTrip = useCallback((list: VehicleTrip[]): VehicleTrip | null => {
+    if (routeState.tripId) {
+      const match = list.find(v => v.tripId === String(routeState.tripId));
+      if (match) return match;
+      if (routeState.vehicleNo || routeState.tripRefNo) {
+        return {
+          vehicleNo: routeState.vehicleNo || '—',
+          tripRefNo: routeState.tripRefNo || '',
+          tripId: String(routeState.tripId),
+          branchId: session?.branchId,
+        };
+      }
+    }
+    return list.length > 0 ? list[0] : null;
+  }, [routeState, session?.branchId]);
+
+  const fetchVehicleList = useCallback(async () => {
+    setListLoading(true);
     try {
-      const branchId = session?.branchId || '51';
-      const data = await getVehicleTracking(branchId, tripId, tripRefNo);
-      const lat = data?.latitude ? Number(data.latitude) : 11.0168;
-      const lng = data?.longitude ? Number(data.longitude) : 76.9558;
+      const vehicleList = await getInvoicedVehicleList(session?.custId, session?.branchId);
+      let list = Array.isArray(vehicleList) ? vehicleList : [];
+      if (list.length === 0 && routeState.tripRefNo) {
+        list = [{
+          vehicleNo: routeState.vehicleNo || '—',
+          tripRefNo: routeState.tripRefNo,
+          tripId: String(routeState.tripId || '216'),
+          branchId: routeState.branchId || session?.branchId || '51',
+        }];
+      }
+      setVehicles(list);
+      setSelectedTrip(prev => {
+        if (prev && list.some(v => v.tripId === prev.tripId && v.tripRefNo === prev.tripRefNo)) return prev;
+        return pickInitialTrip(list);
+      });
+    } catch {
+      const fallback = routeState.tripRefNo ? [{
+        vehicleNo: routeState.vehicleNo || '—',
+        tripRefNo: routeState.tripRefNo,
+        tripId: String(routeState.tripId || '216'),
+        branchId: routeState.branchId || session?.branchId || '51',
+      }] : [];
+      setVehicles(fallback);
+      if (fallback.length > 0) setSelectedTrip(fallback[0]);
+    } finally {
+      setListLoading(false);
+    }
+  }, [session, pickInitialTrip, routeState]);
+
+  const fetchLocation = useCallback(async (trip: VehicleTrip) => {
+    if (!trip.tripId || !trip.tripRefNo) {
+      setLocData(null);
+      setMapHtml('');
+      setTrackingLoading(false);
+      return;
+    }
+    setTrackingLoading(true);
+    try {
+      const branchId = trip.branchId || session?.branchId || '51';
+      const data = await getVehicleTracking(branchId, trip.tripId, trip.tripRefNo);
+      if (!data) {
+        setLocData(null);
+        setMapHtml('');
+        return;
+      }
+      const lat = Number(data.latitude);
+      const lng = Number(data.longitude);
+      const vehicleLabel = data.vehicleNo || trip.vehicleNo || 'Vehicle';
       setLocData(data);
-      setMapHtml(generateMapHTML(lat, lng, vehicleNo, data?.stops || []));
-    } catch { alert('Unable to fetch vehicle tracking location.'); }
-    finally { setLoading(false); }
-  };
+      setMapHtml(generateMapHTML(lat, lng, vehicleLabel, data.stops || []));
+    } catch {
+      setLocData(null);
+      setMapHtml('');
+    } finally {
+      setTrackingLoading(false);
+    }
+  }, [session?.branchId]);
+
+  useEffect(() => { fetchVehicleList(); }, [fetchVehicleList]);
 
   useEffect(() => {
-    fetchLocation();
-    const interval = setInterval(fetchLocation, 30000);
+    if (!selectedTrip) {
+      setLocData(null);
+      setMapHtml('');
+      return;
+    }
+    fetchLocation(selectedTrip);
+    const interval = setInterval(() => fetchLocation(selectedTrip), 30000);
     return () => clearInterval(interval);
-  }, [tripId, tripRefNo]);
+  }, [selectedTrip, fetchLocation]);
 
-  const blobUrl = mapHtml ? URL.createObjectURL(new Blob([mapHtml], { type: 'text/html' })) : '';
+  const [mapBlobUrl, setMapBlobUrl] = useState('');
+  useEffect(() => {
+    if (!mapHtml) {
+      setMapBlobUrl('');
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([mapHtml], { type: 'text/html' }));
+    setMapBlobUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [mapHtml]);
+  const displayVehicle = locData?.vehicleNo || selectedTrip?.vehicleNo || 'Not Available';
+  const displayTripRef = locData?.tripRefNo || selectedTrip?.tripRefNo || '—';
+  const displayStatus = locData?.status || (trackingLoading ? 'Updating...' : selectedTrip ? 'Awaiting location' : 'Select a trip');
+
+  const blueSlide = (
+    <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: '#3861FB', background: 'linear-gradient(135deg, #3861FB 0%, #2752E7 100%)', borderRadius: 20, padding: 16, boxShadow: '0 8px 30px rgba(56,97,251,0.4)', border: '1px solid rgba(255,255,255,0.15)', zIndex: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.75)', margin: '0 0 4px', letterSpacing: 1 }}>VEHICLE NO</p>
+          <p style={{ fontSize: 20, fontWeight: 900, color: '#fff', margin: 0 }}>{displayVehicle}</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', padding: '5px 10px', borderRadius: 20 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#fff', marginRight: 5, animation: locData ? 'pulse 1.5s infinite' : 'none' }} />
+          <span style={{ color: '#fff', fontSize: 9, fontWeight: 900 }}>LIVE</span>
+        </div>
+      </div>
+      <div style={{ marginTop: 12, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '10px 14px' }}>
+        <p style={{ fontSize: 9, fontWeight: 900, color: 'rgba(255,255,255,0.75)', margin: '0 0 4px', letterSpacing: 1 }}>TRIP REF NO</p>
+        <p style={{ fontSize: 14, fontWeight: 900, color: '#fff', margin: 0 }}>{displayTripRef}</p>
+      </div>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.85)', margin: '10px 0 0' }}>
+        Status: {displayStatus}
+      </p>
+    </div>
+  );
 
   return (
-    <div style={{ height: '100%', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #F1F5F9', flexShrink: 0 }}>
-        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#F1F5F9', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
+    <div style={{ height: '100%', backgroundColor: '#E2E8F0', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0', flexShrink: 0 }}>
+        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#E2E8F0', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
           <MdArrowBack size={16} color="#64748B" />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>Back</span>
         </button>
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0 }}>Vehicle Tracking</p>
-          <p style={{ fontSize: 13, color: '#64748B', fontWeight: 600, margin: '2px 0 0' }}>{vehicleNo ? `Live routing for ${vehicleNo}` : 'Live status'}</p>
+          <p style={{ fontSize: 13, color: '#64748B', fontWeight: 600, margin: '2px 0 0' }}>
+            {selectedTrip?.vehicleNo ? `Tracking ${selectedTrip.vehicleNo}` : 'Select a trip to track on map'}
+          </p>
         </div>
-        <button onClick={fetchLocation} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#EEF2FF', border: 'none', cursor: 'pointer' }}>
+        <button
+          onClick={() => selectedTrip ? fetchLocation(selectedTrip) : fetchVehicleList()}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#EEF2FF', border: 'none', cursor: 'pointer' }}
+        >
           <MdRefresh size={16} color="#3861FB" />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#3861FB' }}>Refresh</span>
         </button>
       </div>
 
-      {loading ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 40, height: 40, border: '4px solid #EDF2F7', borderTopColor: '#3861FB', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        </div>
-      ) : (
-        <div style={{ flex: 1, position: 'relative' }}>
-          {blobUrl && <iframe ref={iframeRef} src={blobUrl} style={{ width: '100%', height: '100%', border: 'none' }} onLoad={() => { if (blobUrl) URL.revokeObjectURL(blobUrl); }} />}
-          {locData && (
-            <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 20, padding: 16, backdropFilter: 'blur(10px)', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <p style={{ fontSize: 11, fontWeight: 900, color: '#94A3B8', margin: '0 0 4px', letterSpacing: 1 }}>VEHICLE NO</p>
-                  <p style={{ fontSize: 20, fontWeight: 900, color: '#1A1A1A', margin: 0 }}>{vehicleNo}</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#EF4444', padding: '5px 10px', borderRadius: 20 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#fff', marginRight: 5 }} />
-                  <span style={{ color: '#fff', fontSize: 9, fontWeight: 900 }}>LIVE</span>
-                </div>
-              </div>
-              {tripRefNo && (
-                <div style={{ marginTop: 12, backgroundColor: '#F8F9FD', borderRadius: 12, padding: '10px 14px' }}>
-                  <p style={{ fontSize: 9, fontWeight: 900, color: '#94A3B8', margin: '0 0 4px', letterSpacing: 1 }}>TRIP REF NO</p>
-                  <p style={{ fontSize: 14, fontWeight: 900, color: '#1A1A1A', margin: 0 }}>{tripRefNo}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Available vehicles — always visible */}
+      <div style={{ flexShrink: 0, backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0', padding: '14px 20px', maxHeight: 220, overflowY: 'auto' }}>
+        <p style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', margin: '0 0 10px', letterSpacing: 0.5 }}>
+          AVAILABLE VEHICLES ({vehicles.length})
+        </p>
+        {listLoading ? (
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', margin: 0 }}>Loading available vehicles...</p>
+        ) : vehicles.length === 0 ? (
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', margin: 0 }}>No active vehicles available</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {vehicles.map((trip, idx) => {
+              const isSelected = selectedTrip?.tripId === trip.tripId && selectedTrip?.tripRefNo === trip.tripRefNo;
+              return (
+                <button
+                  key={`${trip.tripId}-${trip.tripRefNo}-${idx}`}
+                  type="button"
+                  onClick={() => setSelectedTrip(trip)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '12px 14px',
+                    borderRadius: 14,
+                    border: `2px solid ${isSelected ? '#3861FB' : '#E2E8F0'}`,
+                    backgroundColor: isSelected ? '#EEF2FF' : '#F8FAFC',
+                    cursor: 'pointer',
+                    boxShadow: isSelected ? '0 4px 12px rgba(56,97,251,0.12)' : 'none',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: isSelected ? 'linear-gradient(135deg, #3861FB, #2752E7)' : '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <MdLocalShipping size={20} color={isSelected ? '#fff' : '#64748B'} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', margin: 0 }}>{trip.vehicleNo}</p>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#64748B', margin: '2px 0 0' }}>
+                      Trip Ref: {trip.tripRefNo} · Trip ID: {trip.tripId}
+                    </p>
+                  </div>
+                  {isSelected && (
+                    <span style={{ fontSize: 10, fontWeight: 900, color: '#3861FB', backgroundColor: '#DBEAFE', padding: '4px 8px', borderRadius: 8, flexShrink: 0 }}>TRACKING</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div style={{ flex: 1, position: 'relative', backgroundColor: '#d5dce6' }}>
+        {(listLoading || trackingLoading) && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5 }}>
+            <div style={{ width: 40, height: 40, border: '4px solid #EDF2F7', borderTopColor: '#3861FB', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          </div>
+        )}
+        {!listLoading && !trackingLoading && !selectedTrip && vehicles.length > 0 && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: 120 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#64748B' }}>Select a trip above to view live map</p>
+          </div>
+        )}
+        {!trackingLoading && mapBlobUrl && (
+          <iframe ref={iframeRef} src={mapBlobUrl} style={{ width: '100%', height: '100%', border: 'none' }} />
+        )}
+        {!trackingLoading && selectedTrip && !mapBlobUrl && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: 120 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#64748B' }}>Map will appear when location is available</p>
+          </div>
+        )}
+        {blueSlide}
+      </div>
     </div>
   );
 };

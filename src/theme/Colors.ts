@@ -7,7 +7,7 @@ export const BrandColors = {
   idhayamYellow: '#F5C800',
   white: '#FFFFFF',
   black: '#000000',
-  grey50: '#F5F7FB',
+  grey50: '#E8EDF3',
   grey100: '#EBEEF2',
   grey200: '#E0E5ED',
   grey300: '#CBD3E1',
@@ -40,7 +40,7 @@ export type ColorTokens = {
 };
 
 export const LightColors: ColorTokens = {
-  background: BrandColors.white, backgroundSecondary: BrandColors.grey50, surface: BrandColors.white,
+  background: '#F8FAFC', backgroundSecondary: BrandColors.grey50, surface: '#F8FAFC',
   glassBackground: 'rgba(255,255,255,0.95)', glassBorder: '#F1F4FF', glassShadow: 'rgba(123,97,255,0.15)',
   textPrimary: BrandColors.grey900, textSecondary: '#858597', textMuted: '#BDBDBD',
   textOnPrimary: BrandColors.white, textOnAccent: BrandColors.grey900, textLink: '#6C5CE7',

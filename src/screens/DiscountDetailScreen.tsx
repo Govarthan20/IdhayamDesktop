@@ -6,8 +6,8 @@ import { MdArrowBack, MdInfoOutline } from 'react-icons/md';
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div style={{ display: 'flex', alignItems: 'center', padding: '6px 0' }}>
-    <span style={{ flex: 1.2, fontSize: 11, fontWeight: 900, color: '#A0AEC0', letterSpacing: 0.5 }}>{label}</span>
-    <span style={{ flex: 2, fontSize: 13, fontWeight: 800, color: '#1A1A1A' }}>{value}</span>
+    <span style={{ flex: 1.2, fontSize: 11, fontWeight: 900, color: '#334155', letterSpacing: 0.5 }}>{label}</span>
+    <span style={{ flex: 2, fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{value}</span>
   </div>
 );
 
@@ -43,13 +43,13 @@ const DiscountDetailScreen: React.FC = () => {
   const isSD = type === 'SD';
   const isQD = type === 'QD';
 
-  const thStyle: React.CSSProperties = { fontSize: 11, fontWeight: 900, color: '#3861FB', textAlign: 'center', padding: '10px 8px', backgroundColor: '#F8F9FD', borderBottom: '1.5px solid #EDF2F7' };
+  const thStyle: React.CSSProperties = { fontSize: 11, fontWeight: 900, color: '#3861FB', textAlign: 'center', padding: '10px 8px', backgroundColor: '#E8EDF3', borderBottom: '1.5px solid #EDF2F7' };
   const tdStyle: React.CSSProperties = { fontSize: 13, fontWeight: 800, color: '#E53E3E', textAlign: 'center', padding: '12px 8px' };
 
   return (
-    <div style={{ minHeight: '100%', backgroundColor: '#F1F5F9', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #F1F5F9' }}>
-        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#F1F5F9', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
+    <div style={{ minHeight: '100%', backgroundColor: '#E2E8F0', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '22px 36px 18px', backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0' }}>
+        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, backgroundColor: '#E2E8F0', border: 'none', cursor: 'pointer', marginRight: 20, flexShrink: 0 }}>
           <MdArrowBack size={16} color="#64748B" />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B' }}>Back</span>
         </button>
@@ -94,7 +94,7 @@ const DiscountDetailScreen: React.FC = () => {
                     <th style={{ ...thStyle, borderLeft: '1px solid #EDF2F7' }}>UTILIZED</th>
                     <th style={{ ...thStyle, borderLeft: '1px solid #EDF2F7' }}>UN UTILIZED</th>
                   </tr></thead>
-                  <tbody><tr style={{ borderTop: '1px solid #F1F5F9' }}>
+                  <tbody><tr style={{ borderTop: '1px solid #E2E8F0' }}>
                     <td style={tdStyle}>{slab?.SALES_QUOTA || slab?.LTR || '0'} {slab?.INV_UOM || 'LT'}</td>
                     <td style={{ ...tdStyle, borderLeft: '1px solid #EDF2F7' }}>{slab?.UTILIZED || slab?.PERIOD_SALE || '0'} {slab?.INV_UOM || 'LT'}</td>
                     <td style={{ ...tdStyle, borderLeft: '1px solid #EDF2F7' }}>{slab?.UN_UTILIZED || (parseFloat(slab?.LTR || 0) - parseFloat(slab?.PERIOD_SALE || 0)).toFixed(0)} {slab?.INV_UOM || 'LT'}</td>
@@ -118,7 +118,7 @@ const DiscountDetailScreen: React.FC = () => {
                     {slab.DISCOUNT_DETAIL.split(',').map((row: string, ri: number) => {
                       const cols = row.split('#');
                       return (
-                        <tr key={ri} style={{ borderTop: '1px solid #F1F5F9' }}>
+                        <tr key={ri} style={{ borderTop: '1px solid #E2E8F0' }}>
                           {[cols[0], cols[1], cols[2]].map((v, ci) => <td key={ci} style={tdStyle}>{v || '-'}</td>)}
                           <td style={{ ...tdStyle, borderLeft: '1px solid #EDF2F7' }}>{fmtNum(cols[3])}</td>
                         </tr>
@@ -131,12 +131,12 @@ const DiscountDetailScreen: React.FC = () => {
               {applicableItems.length > 0 && !isQD && (
                 <div style={{ marginTop: 5 }}>
                   <div style={{ display: 'inline-block', backgroundColor: '#FEFCBF', padding: '6px 12px', borderRadius: 8, marginBottom: 15 }}>
-                    <span style={{ fontSize: 10, fontWeight: 900, color: '#B7791F', letterSpacing: 0.5 }}>APPLICABLE ITEMS ({applicableItems.length})</span>
+                    <span style={{ fontSize: 10, fontWeight: 900, color: '#78350F', letterSpacing: 0.5 }}>APPLICABLE ITEMS ({applicableItems.length})</span>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', border: '1px solid #E2E8F0', borderRadius: 8, overflow: 'hidden' }}>
                     {applicableItems.map((name: string, ii: number) => (
-                      <div key={ii} style={{ width: '33.33%', padding: '10px 8px', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', textAlign: 'center', boxSizing: 'border-box' }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#4A5568' }}>{name}</span>
+                      <div key={ii} style={{ width: '33.33%', padding: '10px 8px', backgroundColor: '#E2E8F0', border: '1px solid #E2E8F0', textAlign: 'center', boxSizing: 'border-box' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#0F172A' }}>{name}</span>
                       </div>
                     ))}
                   </div>

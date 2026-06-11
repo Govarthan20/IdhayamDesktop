@@ -3,6 +3,12 @@ import { join } from 'path';
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+const getAppIcon = () => {
+  if (isDev) return join(__dirname, '../../build/icon.png');
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  return join(process.resourcesPath, iconFile);
+};
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1280,
@@ -12,6 +18,7 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     title: 'Idhayam Distributor',
+    icon: getAppIcon(),
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
       sandbox: false,

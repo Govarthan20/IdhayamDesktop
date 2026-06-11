@@ -51,11 +51,11 @@ const LoginResponseScreen: React.FC = () => {
   }, [branches]);
 
   return (
-    <div style={{ width: '100%', height: '100vh', backgroundColor: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', height: '100vh', backgroundColor: '#EEF2F6', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <div style={{ padding: '28px 48px 24px', backgroundColor: '#fff', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ padding: '28px 48px 24px', backgroundColor: '#fff', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 14 }}>
         <div style={{ width: 40, height: 40, borderRadius: 11, backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          <img src={logoImg} alt="Idhayam" style={{ width: '85%', height: '85%', objectFit: 'contain' }}
+          <img src={logoImg} alt="Idhayam" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
         <div>
@@ -91,7 +91,7 @@ const LoginResponseScreen: React.FC = () => {
                   <p style={{ fontSize: 12, color: '#64748B', fontWeight: 600, margin: '2px 0 0' }}>{branch.TERRITORY_NAME}</p>
                 )}
               </div>
-              <div style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <MdKeyboardArrowRight size={22} color="#94A3B8" />
               </div>
             </div>
@@ -103,7 +103,7 @@ const LoginResponseScreen: React.FC = () => {
                 { Icon: MdReceipt,      color: '#D97706', bg: '#FEF3C7', label: 'GST',      val: branch.GST_NO || branch.GSTNO || 'N/A' },
                 ...(branch.ADDRESS || branch.ADDRS ? [{ Icon: MdLocationCity, color: '#16A34A', bg: '#F0FDF4', label: 'ADDRESS', val: (branch.ADDRESS || branch.ADDRS).substring(0, 30) + '...' }] : []),
               ].map(({ Icon, color, bg, label, val }, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#F8FAFC', padding: '10px 12px', borderRadius: 10 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#EEF2F6', padding: '10px 12px', borderRadius: 10 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Icon size={14} color={color} />
                   </div>

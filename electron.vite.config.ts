@@ -21,6 +21,21 @@ export default defineConfig({
   renderer: {
     root: '.',
     plugins: [react()],
+    server: {
+      proxy: {
+        '/MOB': {
+          target: 'http://117.232.71.91:2101',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/MOB-TRACK': {
+          target: 'http://117.234.71.91:2101',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/MOB-TRACK/, '/MOB'),
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': '/src',
